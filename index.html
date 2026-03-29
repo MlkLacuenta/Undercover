@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UNDERCOVER</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0e17;
+    --card: #221f35;
+    --accent: #ff6b35;
+    --accent2: #ffd166;
+    --green: #06d6a0;
+    --red: #ef476f;
+    --text: #fffffe;
+    --muted: #a7a9be;
+    --border: rgba(255,255,255,0.08);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+  }
+  body::before {
+    content:'';
+    position:fixed;
+    inset:0;
+    background:
+      radial-gradient(ellipse at 20% 20%, rgba(255,107,53,0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(6,214,160,0.08) 0%, transparent 50%);
+    pointer-events:none;
+  }
+  .app { width:100%; max-width:480px; padding:20px; }
+  h1.logo {
+    font-family:'Bebas Neue',sans-serif;
+    font-size:3.5rem;
+    letter-spacing:6px;
+    text-align:center;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    background-clip:text;
+    margin-bottom:4px;
+  }
+  .tagline { text-align:center; color:var(--muted); font-size:0.8rem; letter-spacing:3px; text-transform:uppercase; margin-bottom:32px; }
+  .screen { display:none; animation:fadeIn 0.3s ease; }
+  .screen.active { display:block; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:20px; padding:28px; margin-bottom:16px; }
+  .card-title { font-family:'Bebas Neue',sans-serif; font-size:1.2rem; letter-spacing:3px; color:var(--accent); margin-bottom:16px; }
+  input, select {
+    width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--border);
+    border-radius:12px; color:var(--text); font-family:'DM Sans',sans-serif;
+    font-size:1rem; padding:14px 18px; outline:none; transition:border-color 0.2s; margin-bottom:12px;
+  }
+  input:focus, select:focus { border-color:var(--accent); }
+  select option { background:#221f35; }
+  .btn { width:100%; padding:16px; border:none; border-radius:14px; font-family:'Bebas Neue',sans-serif; font-size:1.1rem; letter-spacing:3px; cursor:pointer; transition:all 0.2s; margin-bottom:10px; }
+  .btn-primary { background:linear-gradient(135deg,var(--accent),#ff8c42); color:white; }
+  .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(255,107,53,0.4); }
+  .btn-primary:disabled { opacity:0.5; cursor:not-allowed; transform:none; box-shadow:none; }
+  .btn-secondary { background:rgba(255,255,255,0.06); color:var(--text); border:1px solid var(--border); }
+  .btn-secondary:hover { background:rgba(255,255,255,0.1); }
+  .code-display { text-align:center; font-family:'Bebas Neue',sans-serif; font-size:3rem; letter-spacing:12px; color:var(--accent2); background:rgba(255,209,102,0.08); border:2px dashed rgba(255,209,102,0.3); border-radius:16px; padding:20px; margin:16px 0; }
+  .player-list { list-style:none; }
+  .player-item { display:flex; align-items:center; gap:12px; padding:12px 16px; background:rgba(255,255,255,0.04); border-radius:12px; margin-bottom:8px; border:1px solid var(--border); }
+  .badge { margin-left:auto; font-size:0.7rem; letter-spacing:2px; padding:4px 10px; border-radius:20px; font-weight:700; text-transform:uppercase; }
+  .badge-host { background:rgba(255,107,53,0.2); color:var(--accent); }
+  .badge-ready { background:rgba(6,214,160,0.2); color:var(--green); }
+  .role-card { text-align:center; padding:40px 28px; position:relative; overflow:hidden; }
+  .role-card::before { content:''; position:absolute; inset:0; border-radius:20px; background:var(--green); opacity:0.08; }
+  .role-emoji { font-size:5rem; margin-bottom:16px; display:block; }
+  .role-name { font-family:'Bebas Neue',sans-serif; font-size:2.5rem; letter-spacing:6px; margin-bottom:8px; color:var(--green); }
+  .role-word { font-size:1.8rem; font-weight:700; color:var(--text); background:rgba(255,255,255,0.08); padding:12px 24px; border-radius:12px; margin:16px 0; display:inline-block; }
+  .role-desc { color:var(--muted); font-size:0.9rem; line-height:1.6; margin-top:12px; }
+  .timer { font-family:'Bebas Neue',sans-serif; font-size:4rem; text-align:center; color:var(--accent2); margin:16px 0; }
+  .timer.urgent { color:var(--red); animation:pulse 0.5s infinite alternate; }
+  @keyframes pulse { from{opacity:1} to{opacity:0.5} }
+  .vote-btn { display:flex; align-items:center; gap:12px; padding:14px 18px; background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:14px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:0.95rem; cursor:pointer; transition:all 0.2s; width:100%; margin-bottom:8px; text-align:left; }
+  .vote-btn:hover { background:rgba(255,107,53,0.15); border-color:var(--accent); }
+  .vote-btn.selected { background:rgba(255,107,53,0.2); border-color:var(--accent); }
+  .result-card { text-align:center; padding:32px; }
+  .result-emoji { font-size:5rem; margin-bottom:16px; display:block; }
+  .result-title { font-family:'Bebas Neue',sans-serif; font-size:2.8rem; letter-spacing:4px; margin-bottom:8px; }
+  .reveal-list { list-style:none; margin:16px 0; }
+  .reveal-item { display:flex; align-items:center; gap:10px; padding:10px 16px; border-radius:10px; margin-bottom:6px; font-size:0.9rem; }
+  .reveal-item.was-impostor { background:rgba(239,71,111,0.15); }
+  .reveal-item.was-innocent { background:rgba(6,214,160,0.1); }
+  .info { color:var(--muted); font-size:0.85rem; text-align:center; margin-bottom:12px; }
+  .divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
+  .status-bar { display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.04); border-radius:12px; padding:10px 16px; margin-bottom:12px; font-size:0.85rem; color:var(--muted); }
+  .status-dot { width:8px; height:8px; border-radius:50%; background:var(--green); animation:blink 1.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .ai-thinking { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:0.85rem; justify-content:center; padding:12px; }
+  .ai-dots span { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--accent); animation:bounce 1.2s infinite; margin:0 2px; }
+  .ai-dots span:nth-child(2) { animation-delay:0.2s; }
+  .ai-dots span:nth-child(3) { animation-delay:0.4s; }
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  .hidden-card { filter:blur(20px); user-select:none; cursor:pointer; transition:filter 0.4s; }
+  .hidden-card:hover { filter:blur(10px); }
+  .hidden-card.revealed { filter:none; cursor:default; }
+  .tap-hint { text-align:center; color:var(--muted); font-size:0.8rem; margin-top:-8px; margin-bottom:12px; animation:fadeInOut 2s infinite; }
+  @keyframes fadeInOut { 0%,100%{opacity:0.5} 50%{opacity:1} }
+  .error { color:var(--red); font-size:0.85rem; text-align:center; margin-top:-8px; margin-bottom:8px; min-height:20px; }
+  .pwd-wrap { position:relative; }
+  .pwd-wrap input { padding-right:50px; }
+  .eye-btn { position:absolute; right:14px; top:14px; background:none; border:none; color:var(--muted); cursor:pointer; font-size:1rem; }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1 class="logo">UNDERCOVER</h1>
+  <p class="tagline">Qui ment parmi vous ?</p>
+
+  <!-- HOME -->
+  <div class="screen active" id="screen-home">
+    <div class="card">
+      <div class="card-title">Créer une partie</div>
+      <input type="text" id="host-name" placeholder="Ton pseudo" maxlength="20">
+      <select id="player-count">
+        <option value="3">3 joueurs</option>
+        <option value="4" selected>4 joueurs</option>
+        <option value="5">5 joueurs</option>
+      </select>
+      <div class="pwd-wrap">
+        <input type="password" id="host-password" placeholder="Mot de passe de la salle" maxlength="20">
+        <button class="eye-btn" onclick="togglePwd('host-password')">👁️</button>
+      </div>
+      <button class="btn btn-primary" onclick="createRoom()">CRÉER LA SALLE</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Rejoindre</div>
+      <input type="text" id="join-name" placeholder="Ton pseudo" maxlength="20">
+      <input type="text" id="join-code" placeholder="Code de la salle" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;">
+      <div class="pwd-wrap">
+        <input type="password" id="join-password" placeholder="Mot de passe" maxlength="20">
+        <button class="eye-btn" onclick="togglePwd('join-password')">👁️</button>
+      </div>
+      <div class="error" id="join-error"></div>
+      <button class="btn btn-secondary" onclick="joinRoom()">REJOINDRE</button>
+    </div>
+  </div>
+
+  <!-- LOBBY -->
+  <div class="screen" id="screen-lobby">
+    <div class="status-bar"><span>Salle ouverte 🔒</span><div class="status-dot"></div></div>
+    <div class="card">
+      <div class="card-title">Code de la salle</div>
+      <div class="code-display" id="room-code-display">-----</div>
+      <p class="info">Partage ce code + le mot de passe à tes amis</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Joueurs (<span id="player-count-display">0</span>/<span id="player-max-display">4</span>)</div>
+      <ul class="player-list" id="player-list"></ul>
+    </div>
+    <button class="btn btn-primary" id="start-btn" onclick="startGame()" disabled>EN ATTENTE DE JOUEURS...</button>
+    <button class="btn btn-secondary" onclick="leaveRoom()">Quitter</button>
+  </div>
+
+  <!-- WAITING -->
+  <div class="screen" id="screen-waiting">
+    <div class="card" style="text-align:center">
+      <div class="card-title">Connecté ! 🎉</div>
+      <div class="ai-thinking"><div class="ai-dots"><span></span><span></span><span></span></div>En attente de l'hôte...</div>
+      <ul class="player-list" id="waiting-player-list" style="margin-top:16px;text-align:left;"></ul>
+    </div>
+    <button class="btn btn-secondary" onclick="leaveRoom()">Quitter</button>
+  </div>
+
+  <!-- ROLE -->
+  <div class="screen" id="screen-role">
+    <p class="info">⚠️ NE MONTRE PAS TON ÉCRAN !</p>
+    <div class="card role-card hidden-card" id="role-card-el" onclick="revealCard()">
+      <span class="role-emoji">🃏</span>
+      <div class="role-name">TON MOT</div>
+      <div class="role-word" id="role-word-el">???</div>
+      <p class="role-desc" id="role-desc-el"></p>
+    </div>
+    <p class="tap-hint" id="tap-hint">👆 Appuie sur la carte pour voir ton mot</p>
+    <button class="btn btn-primary" id="ready-btn" onclick="playerReady()" style="display:none;">JE SUIS PRÊT ✅</button>
+  </div>
+
+  <!-- DISCUSSION -->
+  <div class="screen" id="screen-discussion">
+    <div class="card" style="text-align:center">
+      <div class="card-title">PHASE DE DISCUSSION</div>
+      <p style="color:var(--muted);font-size:0.9rem;margin-bottom:16px;">Donnez des indices, trouvez l'undercover !</p>
+      <div class="timer" id="timer-display">2:00</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Rappel</div>
+      <p style="color:var(--muted);font-size:0.9rem;line-height:1.8;">
+        ✅ La <strong style="color:var(--green)">majorité</strong> partage le même mot<br>
+        😈 L'<strong style="color:var(--red)">undercover</strong> a un mot légèrement différent<br>
+        🗣️ Donnez des indices sans dire votre mot directement
+      </p>
+    </div>
+    <button class="btn btn-primary" id="vote-btn-trigger" onclick="goToVote()" style="display:none;">PASSER AU VOTE</button>
+  </div>
+
+  <!-- VOTE -->
+  <div class="screen" id="screen-vote">
+    <div class="card">
+      <div class="card-title">VOTE 🗳️</div>
+      <p style="color:var(--muted);font-size:0.9rem;margin-bottom:16px;">Qui selon toi a un mot différent ?</p>
+      <div id="vote-options"></div>
+      <div class="error" id="vote-error"></div>
+    </div>
+    <button class="btn btn-primary" onclick="submitVote()">CONFIRMER MON VOTE</button>
+  </div>
+
+  <!-- WAITING VOTES -->
+  <div class="screen" id="screen-voting-wait">
+    <div class="card" style="text-align:center">
+      <div class="card-title">EN ATTENTE DES VOTES</div>
+      <div class="ai-thinking">
+        <div class="ai-dots"><span></span><span></span><span></span></div>
+        <span id="votes-progress">0/0 votes reçus</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="screen" id="screen-result">
+    <div class="card result-card">
+      <span class="result-emoji" id="result-emoji">🎭</span>
+      <div class="result-title" id="result-title">???</div>
+      <p id="result-subtitle" style="color:var(--muted);margin-bottom:16px;"></p>
+      <hr class="divider">
+      <ul class="reveal-list" id="reveal-list"></ul>
+      <hr class="divider">
+      <p style="color:var(--muted);font-size:0.85rem;">
+        Mot commun : <strong id="word-common" style="color:var(--green)">?</strong>
+        &nbsp;|&nbsp;
+        Mot undercover : <strong id="word-undercover" style="color:var(--red)">?</strong>
+      </p>
+    </div>
+    <button class="btn btn-primary" id="new-game-btn" onclick="newGame()">NOUVELLE PARTIE</button>
+    <button class="btn btn-secondary" onclick="leaveRoom()">ACCUEIL</button>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, update, onValue, off } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBSiCNM26Zi1dcRPd88ISzU2m8Afepn0Ls",
+  authDomain: "undercover-bd7e8.firebaseapp.com",
+  databaseURL: "https://undercover-bd7e8-default-rtdb.firebaseio.com",
+  projectId: "undercover-bd7e8",
+  storageBucket: "undercover-bd7e8.firebasestorage.app",
+  messagingSenderId: "821585855447",
+  appId: "1:821585855447:web:7af565e5da2fa5d426c192"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getDatabase(fbApp);
+
+const WORDS = [
+  ["Plage","Piscine"],["Pizza","Quiche"],["Chien","Loup"],["Football","Rugby"],
+  ["Cinéma","Théâtre"],["Avion","Planeur"],["Médecin","Chirurgien"],
+  ["Guitare","Basse"],["Château","Manoir"],["Glace","Sorbet"],
+  ["Montagne","Colline"],["Bibliothèque","Librairie"],["Requin","Dauphin"],
+  ["Vampire","Loup-garou"],["Café","Thé"],["Voiture","Karting"],
+  ["Astronaute","Cosmonaute"],["Roi","Président"],["Tableau","Affiche"],
+  ["Forêt","Jungle"],["Chocolat","Caramel"],["Pluie","Brouillard"],
+  ["Train","Tram"],["Lion","Tigre"],["Prison","Commissariat"],
+  ["Mariage","Fiançailles"],["Fantôme","Revenant"],["Burger","Sandwich"],
+  ["Surf","Wakeboard"],["Volcan","Geyser"]
+];
+const AVATARS = ['🦊','🐼','🐸','🦁','🐙','🦋','🐺','🦄'];
+
+let S = {
+  code: null, myId: null, myName: null, isHost: false, max: 4,
+  timerInterval: null, listener: null,
+  roleShown: false, discShown: false, voteShown: false, resShown: false,
+};
+
+function rRef(code) { return ref(db, 'rooms/' + (code || S.code)); }
+
+function showScreen(n) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + n).classList.add('active');
+}
+
+window.togglePwd = id => {
+  const el = document.getElementById(id);
+  el.type = el.type === 'password' ? 'text' : 'password';
+};
+
+function stopListen() {
+  if (S.listener) { off(rRef(S.code)); S.listener = null; }
+}
+
+function resetS() {
+  stopListen();
+  clearInterval(S.timerInterval);
+  S = { code:null, myId:null, myName:null, isHost:false, max:4, timerInterval:null, listener:null, roleShown:false, discShown:false, voteShown:false, resShown:false };
+}
+
+function listenRoom() {
+  stopListen();
+  S.listener = onValue(rRef(), snap => {
+    const r = snap.val();
+    if (!r) return;
+    onRoom(r);
+  });
+}
+
+function onRoom(r) {
+  if (r.phase === 'lobby') {
+    const players = Object.values(r.players || {});
+    if (document.getElementById('screen-lobby').classList.contains('active')) renderLobbyPlayers(players, r.max);
+    if (document.getElementById('screen-waiting').classList.contains('active')) renderWaitingPlayers(players);
+  }
+  if (r.phase === 'role' && !S.roleShown) { S.roleShown = true; showRole(r); }
+  if (r.phase === 'discussion' && !S.discShown) { S.discShown = true; showDiscussion(); }
+  if (r.phase === 'vote' && !S.voteShown) { S.voteShown = true; showVote(r); }
+  if (r.phase === 'result' && !S.resShown) { S.resShown = true; showResult(r); }
+  if (r.phase === 'vote' || r.phase === 'result') {
+    const vc = Object.keys(r.votes || {}).length;
+    const el = document.getElementById('votes-progress');
+    if (el) el.textContent = `${vc}/${r.max} votes reçus`;
+  }
+}
+
+function genCode() {
+  return Array.from({length:5}, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join('');
+}
+function genId() { return Math.random().toString(36).slice(2,10); }
+
+// ── CREATE ──
+window.createRoom = async () => {
+  const name = document.getElementById('host-name').value.trim();
+  const pwd = document.getElementById('host-password').value.trim();
+  if (!name) { alert('Entre ton pseudo !'); return; }
+  if (!pwd) { alert('Définis un mot de passe !'); return; }
+  const max = parseInt(document.getElementById('player-count').value);
+  const code = genCode();
+  const myId = genId();
+  const wp = WORDS[Math.floor(Math.random() * WORDS.length)];
+  const impIdx = Math.floor(Math.random() * max);
+
+  S.code = code; S.myId = myId; S.myName = name; S.isHost = true; S.max = max;
+
+  const room = {
+    code, max, phase: 'lobby', hostId: myId, password: pwd,
+    wordPair: { common: wp[0], undercover: wp[1] }, impostorIndex: impIdx,
+    players: { [myId]: { id:myId, name, avatar:AVATARS[0], isHost:true, isUndercover: impIdx===0, word: impIdx===0 ? wp[1] : wp[0] } },
+    votes: {}, readyPlayers: {}, createdAt: Date.now(),
+  };
+
+  await set(rRef(code), room);
+  document.getElementById('room-code-display').textContent = code;
+  document.getElementById('player-max-display').textContent = max;
+  showScreen('lobby');
+  listenRoom();
+};
+
+// ── JOIN ──
+window.joinRoom = async () => {
+  const name = document.getElementById('join-name').value.trim();
+  const code = document.getElementById('join-code').value.trim().toUpperCase();
+  const pwd = document.getElementById('join-password').value.trim();
+  const err = document.getElementById('join-error');
+  err.textContent = '';
+
+  if (!name) { err.textContent = 'Entre ton pseudo !'; return; }
+  if (!code) { err.textContent = 'Entre le code !'; return; }
+  if (!pwd) { err.textContent = 'Entre le mot de passe !'; return; }
+
+  const snap = await get(rRef(code));
+  if (!snap.exists()) { err.textContent = 'Salle introuvable.'; return; }
+  const r = snap.val();
+  if (r.password !== pwd) { err.textContent = 'Mot de passe incorrect !'; return; }
+  if (Object.keys(r.players || {}).length >= r.max) { err.textContent = 'Salle pleine !'; return; }
+  if (r.phase !== 'lobby') { err.textContent = 'Partie déjà commencée !'; return; }
+
+  const myId = genId();
+  const idx = Object.keys(r.players).length;
+  const isUnder = r.impostorIndex === idx;
+  const word = isUnder ? r.wordPair.undercover : r.wordPair.common;
+
+  S.code = code; S.myId = myId; S.myName = name; S.isHost = false; S.max = r.max;
+
+  await update(ref(db, `rooms/${code}/players`), {
+    [myId]: { id:myId, name, avatar:AVATARS[idx % AVATARS.length], isHost:false, isUndercover:isUnder, word }
+  });
+
+  showScreen('waiting');
+  listenRoom();
+};
+
+window.leaveRoom = () => { resetS(); showScreen('home'); };
+
+function renderLobbyPlayers(players, max) {
+  document.getElementById('player-count-display').textContent = players.length;
+  document.getElementById('player-list').innerHTML = players.map(p => `
+    <li class="player-item">
+      <span style="font-size:1.4rem">${p.avatar}</span>
+      <span>${p.name}</span>
+      ${p.isHost ? '<span class="badge badge-host">HÔTE</span>' : '<span class="badge badge-ready">OK</span>'}
+    </li>`).join('');
+  const btn = document.getElementById('start-btn');
+  btn.disabled = players.length < max;
+  btn.textContent = players.length >= max ? 'LANCER LA PARTIE' : `EN ATTENTE (${players.length}/${max})`;
+}
+
+function renderWaitingPlayers(players) {
+  document.getElementById('waiting-player-list').innerHTML = players.map(p => `
+    <li class="player-item">
+      <span style="font-size:1.4rem">${p.avatar}</span>
+      <span>${p.name}</span>
+      ${p.isHost ? '<span class="badge badge-host">HÔTE</span>' : ''}
+    </li>`).join('');
+}
+
+window.startGame = async () => {
+  await update(rRef(), { phase: 'role' });
+};
+
+function showRole(room) {
+  const me = room.players[S.myId];
+  if (!me) return;
+  document.getElementById('role-word-el').textContent = me.word;
+  document.getElementById('role-desc-el').textContent = me.isUndercover
+    ? "Ton mot est légèrement différent des autres. Bluff pour survivre au vote !"
+    : "Donne des indices sur ton mot sans le dire directement. Trouve l'undercover !";
+  const card = document.getElementById('role-card-el');
+  card.classList.remove('revealed'); card.classList.add('hidden-card'); card.onclick = revealCard;
+  document.getElementById('tap-hint').style.display = 'block';
+  document.getElementById('ready-btn').style.display = 'none';
+  document.getElementById('ready-btn').disabled = false;
+  document.getElementById('ready-btn').textContent = 'JE SUIS PRÊT ✅';
+  showScreen('role');
+}
+
+window.revealCard = () => {
+  const card = document.getElementById('role-card-el');
+  card.classList.remove('hidden-card'); card.classList.add('revealed'); card.onclick = null;
+  document.getElementById('tap-hint').style.display = 'none';
+  document.getElementById('ready-btn').style.display = 'block';
+};
+
+window.playerReady = async () => {
+  const btn = document.getElementById('ready-btn');
+  btn.disabled = true; btn.textContent = 'EN ATTENTE DES AUTRES...';
+  await update(ref(db, `rooms/${S.code}/readyPlayers`), { [S.myId]: true });
+  const snap = await get(rRef());
+  const r = snap.val();
+  if (Object.keys(r.readyPlayers || {}).length >= r.max) {
+    await update(rRef(), { phase: 'discussion' });
+  }
+};
+
+function showDiscussion() {
+  clearInterval(S.timerInterval);
+  showScreen('discussion');
+  let sec = 120;
+  const timerEl = document.getElementById('timer-display');
+  const voteBtn = document.getElementById('vote-btn-trigger');
+  const tick = () => {
+    timerEl.textContent = `${Math.floor(sec/60)}:${(sec%60).toString().padStart(2,'0')}`;
+    timerEl.classList.toggle('urgent', sec <= 15);
+    if (sec <= 0) { clearInterval(S.timerInterval); goToVote(); return; }
+    sec--;
+  };
+  tick();
+  S.timerInterval = setInterval(tick, 1000);
+  setTimeout(() => { voteBtn.style.display = 'block'; }, 30000);
+}
+
+window.goToVote = async () => {
+  clearInterval(S.timerInterval);
+  await update(rRef(), { phase: 'vote' });
+};
+
+let selectedVote = null;
+function showVote(room) {
+  selectedVote = null;
+  showScreen('vote');
+  const others = Object.values(room.players).filter(p => p.id !== S.myId);
+  document.getElementById('vote-options').innerHTML = others.map(p => `
+    <button class="vote-btn" id="vote-${p.id}" onclick="selectVote('${p.id}')">
+      <span style="font-size:1.4rem">${p.avatar}</span>
+      <span>${p.name}</span>
+    </button>`).join('');
+}
+
+window.selectVote = id => {
+  selectedVote = id;
+  document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('vote-' + id)?.classList.add('selected');
+};
+
+window.submitVote = async () => {
+  if (!selectedVote) { document.getElementById('vote-error').textContent = 'Sélectionne quelqu\'un !'; return; }
+  showScreen('voting-wait');
+  await update(ref(db, `rooms/${S.code}/votes`), { [S.myId]: selectedVote });
+  const snap = await get(rRef());
+  const r = snap.val();
+  if (Object.keys(r.votes || {}).length >= r.max) {
+    await update(rRef(), { phase: 'result' });
+  }
+};
+
+function showResult(room) {
+  clearInterval(S.timerInterval);
+  showScreen('result');
+  const votes = room.votes || {};
+  const tally = {};
+  Object.values(votes).forEach(v => { tally[v] = (tally[v] || 0) + 1; });
+  const topId = Object.entries(tally).sort((a,b) => b[1]-a[1])[0]?.[0];
+  const players = Object.values(room.players);
+  const topPlayer = players.find(p => p.id === topId);
+  const undercover = players.find(p => p.isUndercover);
+  const undercoverWins = !topPlayer?.isUndercover;
+
+  document.getElementById('result-emoji').textContent = undercoverWins ? '😈' : '🎉';
+  const title = document.getElementById('result-title');
+  title.textContent = undercoverWins ? "L'UNDERCOVER GAGNE !" : "UNDERCOVER TROUVÉ !";
+  title.style.color = undercoverWins ? 'var(--red)' : 'var(--green)';
+  document.getElementById('result-subtitle').textContent = undercoverWins
+    ? `${topPlayer ? topPlayer.name + ' était innocent...' : 'Personne éliminé.'} L'undercover était ${undercover?.name || '?'} !`
+    : `${topPlayer?.name} avait bien le mot undercover !`;
+
+  document.getElementById('reveal-list').innerHTML = players.map(p => `
+    <li class="reveal-item ${p.isUndercover ? 'was-impostor' : 'was-innocent'}">
+      <span>${p.avatar}</span><span>${p.name}</span>
+      <span style="margin-left:auto;font-size:0.8rem;color:${p.isUndercover ? 'var(--red)' : 'var(--green)'}">
+        ${p.isUndercover ? '😈' : '✅'} "${p.word}"
+      </span>
+    </li>`).join('');
+
+  document.getElementById('word-common').textContent = room.wordPair.common;
+  document.getElementById('word-undercover').textContent = room.wordPair.undercover;
+
+  // Only host can start new game
+  const btn = document.getElementById('new-game-btn');
+  btn.style.display = S.isHost ? 'block' : 'none';
+}
+
+window.newGame = async () => {
+  if (!S.isHost) return;
+  const snap = await get(rRef());
+  const room = snap.val();
+  const wp = WORDS[Math.floor(Math.random() * WORDS.length)];
+  const players = Object.values(room.players);
+  const impIdx = Math.floor(Math.random() * players.length);
+  const updPlayers = {};
+  players.forEach((p, i) => {
+    const isUnder = i === impIdx;
+    updPlayers[p.id] = { ...p, isUndercover: isUnder, word: isUnder ? wp[1] : wp[0] };
+  });
+  S.roleShown = false; S.discShown = false; S.voteShown = false; S.resShown = false;
+  await set(rRef(), { ...room, phase:'role', wordPair:{common:wp[0],undercover:wp[1]}, impostorIndex:impIdx, players:updPlayers, votes:{}, readyPlayers:{} });
+};
+</script>
+</body>
+</html>
